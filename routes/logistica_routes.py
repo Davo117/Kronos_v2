@@ -29,11 +29,10 @@ def get_productos_catalogo():
 @logistica_bp.route('/api/pedidos', methods=['POST'])
 def crear_pedido():
     data = request.json
-    print("📦 Payload recibido:", data) # Esto te servirá para ver en la terminal qué llega
+    print("Recibido:", data)
 
     try:
-        # 1. Limpieza de Datos (Vital para evitar errores de tipo)
-        # Convertimos cadenas vacías "" a None (NULL en base de datos)
+        # 1. Limpieza de Datos 
         def clean(value):
             if value == "" or value is None:
                 return None
@@ -77,4 +76,120 @@ def crear_pedido():
     except Exception as e:
         db.session.rollback()
         print("ERROR EN BACKEND:", str(e))
+        return jsonify({'error': str(e)}), 500
+
+# 4. LISTAR PEDIDOS
+@logistica_bp.route('/api/pedidos', methods=['GET'])
+def get_pedidos():
+    
+    pedidos = Pedido.query.order_by(Pedido.fecha_registro.desc()).all()
+    
+    resultado = []
+    for p in pedidos:
+        nombre_cliente = p.cliente.nombre_fiscal if p.cliente else "Sin Cliente"
+        nombre_sucursal = p.sucursal.nombre if p.sucursal else "N/A"
+        
+        # Calculamos progreso (Por ahora dummy)
+        progreso = 0 
+        
+        resultado.append({
+            'id': p.id,
+            'folio': p.folio_interno,
+            'orden_cliente': p.numero_orden_cliente,
+            'cliente': nombre_cliente,
+            'sucursal': nombre_sucursal,
+            'fecha_registro': p.fecha_registro.strftime('%Y-%m-%d'),
+            'fecha_entrega': p.fecha_entrega_pactada.strftime('%Y-%m-%d') if p.fecha_entrega_pactada else 'Sin Fecha',
+            'estatus': p.estatus,
+            'items_count': len(p.detalles) 
+        })
+        
+    return jsonify(resultado)
+
+# 5. OBTENER UN PEDIDO POR ID 
+# # (Para editar)
+@logistica_bp.route('/api/pedidos/<int:id>', methods=['GET'])
+def get_pedido_por_id(id):
+    p = Pedido.query.get_or_404(id)
+
+    detalles = []
+    for d in p.detalles:
+        detalles.append({
+            'productoId': d.producto_id,
+            'cantidad': float(d.cantidad_solicitada),
+            'unidad': d.unidad_medida,
+            'notas': d.notas
+        })
+        
+    data = {
+        'id': p.id,
+        'cliente_id': p.cliente_id,
+        'sucursal_id': p.sucursal_id,
+        'numero_orden_cliente': p.numero_orden_cliente,
+        'fecha_documento': p.fecha_documento.strftime('%Y-%m-%d') if p.fecha_documento else '',
+        'fecha_recepcion': p.fecha_recepcion.strftime('%Y-%m-%d') if p.fecha_recepcion else '',
+        'fecha_entrega_pactada': p.fecha_entrega_pactada.strftime('%Y-%m-%d') if p.fecha_entrega_pactada else '',
+        'productos': detalles
+    }
+
+    return jsonify(data)
+
+# 6. CANCELAR PEDIDO (Cambio de Estatus)
+@logistica_bp.route('/api/pedidos/<int:id>/cancelar', methods=['PUT'])
+def cancelar_pedido(id):
+    pedido = Pedido.query.get_or_404(id)
+    
+    # Validacion, no cancelar si ya se entregó
+    if pedido.estatus == 'ENTREGADO':
+        return jsonify({'error': 'No se puede cancelar un pedido entregado'}), 400
+        
+    pedido.estatus = 'CANCELADO'
+    db.session.commit()
+    
+    return jsonify({'mensaje': 'Pedido cancelado exitosamente'})
+
+# 7. ACTUALIZAR PEDIDO COMPLETO (PUT)
+@logistica_bp.route('/api/pedidos/<int:id>', methods=['PUT'])
+def actualizar_pedido(id):
+    pedido = Pedido.query.get_or_404(id)
+    data = request.json
+
+    try:
+        # Funciones auxiliares para limpiar datos (igual que en crear)
+        def clean(value):
+            return None if value == "" or value is None else value
+        
+        def parse_date(date_str):
+            return datetime.strptime(date_str, '%Y-%m-%d').date() if date_str else None
+
+        # 1. Actualizar Datos Generales
+        pedido.cliente_id = data['cliente_id']
+        pedido.sucursal_id = clean(data.get('sucursal_id'))
+        pedido.numero_orden_cliente = clean(data.get('numero_orden_cliente'))
+        pedido.fecha_documento = parse_date(data.get('fecha_documento'))
+        pedido.fecha_recepcion = parse_date(data.get('fecha_recepcion'))
+        pedido.fecha_entrega_pactada = parse_date(data.get('fecha_entrega_pactada'))
+        
+        # 2. Actualizar Productos
+        # Primero borramos los detalles actuales de esta orden
+        DetallePedido.query.filter_by(pedido_id=id).delete()
+        
+        for item in data['productos']:
+            if not item['productoId']: continue 
+            
+            detalle = DetallePedido(
+                pedido_id=pedido.id,
+                producto_id=item['productoId'],
+                cantidad_solicitada=float(item['cantidad']) if item['cantidad'] else 0,
+                unidad_medida=item['unidad'],
+                notas=item['notas']
+            )
+            db.session.add(detalle)
+            
+        db.session.commit()
+        return jsonify({'mensaje': 'Pedido actualizado correctamente'})
+
+    except Exception as e:
+        db.session.rollback()
+        print(" ERROR ACTUALIZANDO:", str(e))
         return jsonify({'error': str(e)}), 500

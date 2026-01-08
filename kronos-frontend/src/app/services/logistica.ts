@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 @Injectable({
   providedIn: 'root'
 })
-export class Logistica {
+export class LogisticaService {
   
   
   private apiUrl = 'http://localhost:5000/api';
@@ -13,18 +13,39 @@ export class Logistica {
 
   constructor() { }
 
-  // 1. Obtener Clientes
+  //1.Obtener Clientes
   getClientes(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/clientes`);
   }
 
-  // 2. Obtener Catálogo de Productos
+  //2.Obtener Catálogo de Productos
   getProductos(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/productos-catalogo`);
   }
 
-  // 3. Guardar el Pedido Completo
+  //3.Guardar el Pedido Completo
   guardarPedido(pedido: any): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/pedidos`, pedido);
   }
+
+  //4.Obtener lista de pedidos
+  getPedidos(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/pedidos`);
+  }
+
+  //5.Obtener pedido por ID (Para editar)
+  getPedidoPorId(id: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/pedidos/${id}`);
+  }
+
+  // 6. Cancelar Pedido
+  cancelarPedido(id: number): Observable<any> {
+    return this.http.put(`${this.apiUrl}/pedidos/${id}/cancelar`, {});
+  }
+
+  // 7. Actualizar Pedido Existente
+  actualizarPedido(id: number, pedido: any): Observable<any> {
+    return this.http.put(`${this.apiUrl}/pedidos/${id}`, pedido);
+  }
+  
 }

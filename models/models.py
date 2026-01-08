@@ -58,33 +58,22 @@ class Material(db.Model):
 # -------------------------------------------------------------------
 
 class Producto(db.Model):
-    """
-    La definición del producto que se vende al cliente.
-    """
     __tablename__ = 'productos'
-
     id = db.Column(db.Integer, primary_key=True)
-    codigo_interno = db.Column(db.String(30), unique=True, nullable=False) # Ej: ETQ-001
+    codigo_interno = db.Column(db.String(50), unique=True, nullable=False)
     nombre = db.Column(db.String(200), nullable=False)
     
-    # Aquí iría el cliente (lo dejamos comentado hasta crear el modelo Cliente)
-    # cliente_id = db.Column(db.Integer, db.ForeignKey('clientes.id'))
+    # Dimensiones
+    ancho_mm = db.Column(db.Numeric(10, 2))
+    alto_mm = db.Column(db.Numeric(10, 2))
     
-    # Dimensiones finales del producto (para cálculos de ingeniería)
-    ancho_mm = db.Column(db.Numeric(6, 2))
-    alto_mm = db.Column(db.Numeric(6, 2))
-    
-    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
     activo = db.Column(db.Boolean, default=True)
 
-    # Relación con la receta
-    componentes = db.relationship('ProductoReceta', backref='producto', lazy=True)
-
-    def __repr__(self):
-        return f'<Producto {self.codigo_interno}>'
+    cliente_id = db.Column(db.Integer, db.ForeignKey('clientes.id'))
+    cliente = db.relationship('Cliente', backref='productos_asignados')
 
 # -------------------------------------------------------------------
-# 4. LA RECETA MAESTRA (BILL OF MATERIALS)
+# 4. MATERIALES Y RECEtas
 # -------------------------------------------------------------------
 
 class ProductoReceta(db.Model):
@@ -113,8 +102,8 @@ class ProductoReceta(db.Model):
     def __repr__(self):
         return f'<Receta {self.producto.codigo_interno} -> {self.material.descripcion}>'
     
-    # -------------------------------------------------------------------
-# 5. USUARIOS Y SEGURIDAD (Core)
+# -------------------------------------------------------------------
+# 5. USUARIOS Y SEGURIDAD
 # -------------------------------------------------------------------
 
 class Empleado(db.Model):
@@ -136,33 +125,57 @@ class Usuario(db.Model):
     
     empleado_id = db.Column(db.Integer, db.ForeignKey('empleados.id'))
 
-# EN models/models.py
-
-# ... (Tus imports y modelos anteriores de Materiales/Productos siguen igual)
 
 # -------------------------------------------------------------------
 # 6. LOGÍSTICA Y PEDIDOS
 # -------------------------------------------------------------------
+
+class Ciudad(db.Model):
+    __tablename__ = 'ciudades'
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False) # Ej. Monterrey
+    estado = db.Column(db.String(100), nullable=False) # Ej. Nuevo León
+    pais = db.Column(db.String(100), default='México')
+    
+    # Relaciones para saber qué clientes/sucursales hay en esta ciudad
+    clientes = db.relationship('Cliente', backref='ciudad_ref', lazy=True)
+    sucursales = db.relationship('Sucursal', backref='ciudad_ref', lazy=True)
 
 class Cliente(db.Model):
     __tablename__ = 'clientes'
     id = db.Column(db.Integer, primary_key=True)
     nombre_fiscal = db.Column(db.String(200), nullable=False)
     rfc = db.Column(db.String(20))
-    # Relación con sucursales
+    telefono = db.Column(db.String(20))
+    
+    # Dirección Fiscal
+    direccion = db.Column(db.String(255)) # Calle y Número
+    colonia = db.Column(db.String(100))
+    codigo_postal = db.Column(db.String(10))
+    
+    # Relación con Ciudad
+    ciudad_id = db.Column(db.Integer, db.ForeignKey('ciudades.id'))
+    
+    # Relación con sus sucursales
     sucursales = db.relationship('Sucursal', backref='cliente', lazy=True)
 
 class Sucursal(db.Model):
-    """
-    NUEVA TABLA: Para manejar Planta Norte, CEDIS Occidente, etc.
-    """
     __tablename__ = 'sucursales'
     id = db.Column(db.Integer, primary_key=True)
     cliente_id = db.Column(db.Integer, db.ForeignKey('clientes.id'), nullable=False)
+    
     nombre = db.Column(db.String(100), nullable=False) # Ej: "Planta Norte"
+    
+    # Dirección de Entrega (Puede ser distinta a la fiscal)
     direccion = db.Column(db.String(255))
-    ciudad = db.Column(db.String(100))
-
+    colonia = db.Column(db.String(100))
+    codigo_postal = db.Column(db.String(10))
+    telefono_sucursal = db.Column(db.String(20))
+    transporte = db.Column(db.String(100)) # Ej: "Transportes Castores", "Propio", etc.
+    
+    # Relación con Ciudad
+    ciudad_id = db.Column(db.Integer, db.ForeignKey('ciudades.id'))
+    
 class Pedido(db.Model):
     __tablename__ = 'pedidos'
     id = db.Column(db.Integer, primary_key=True)
@@ -176,14 +189,16 @@ class Pedido(db.Model):
 
     # Fechas Clave
     fecha_registro = db.Column(db.DateTime, default=datetime.utcnow) # Cuándo se capturó en sistema
-    fecha_documento = db.Column(db.Date) # La fecha del papel del cliente
-    fecha_recepcion = db.Column(db.Date) # Cuando nos llegó el correo/papel
+    fecha_documento = db.Column(db.Date) # La fecha del documento del cliente
+    fecha_recepcion = db.Column(db.Date) # Cuando nos llegó el documento
     fecha_entrega_pactada = db.Column(db.Date) # Cuando prometimos entregar
 
     estatus = db.Column(db.String(20), default='BORRADOR') 
 
     # Relación con los productos
     detalles = db.relationship('DetallePedido', backref='pedido', lazy=True)
+    cliente = db.relationship('Cliente', backref='pedidos')
+    sucursal = db.relationship('Sucursal', backref='pedidos')
 
 class DetallePedido(db.Model):
     __tablename__ = 'detalles_pedido'
@@ -196,10 +211,10 @@ class DetallePedido(db.Model):
     notas = db.Column(db.String(255)) # "Lote prioritario", etc.
 
     cantidad_entregada = db.Column(db.Numeric(10, 2), default=0)
-
+    producto = db.relationship('Producto', backref='detalles_pedido')
 
 # -------------------------------------------------------------------
-# 7. PRODUCCIÓN (Bitácora Unificada)
+# 7. PRODUCCIÓN 
 # -------------------------------------------------------------------
 
 class OrdenProduccion(db.Model):
@@ -221,7 +236,7 @@ class BitacoraProduccion(db.Model):
     
     empleado_id = db.Column(db.Integer, db.ForeignKey('empleados.id'))
     
-    # Aquí definimos qué se hizo (Impresión, Corte, Laminado)
+    # Aquí definimos qué se hizo 
     proceso = db.Column(db.String(50), nullable=False) 
     
     fecha_inicio = db.Column(db.DateTime)
@@ -232,3 +247,4 @@ class BitacoraProduccion(db.Model):
     merma_cantidad = db.Column(db.Numeric(10, 2))
     
     observaciones = db.Column(db.Text)
+    

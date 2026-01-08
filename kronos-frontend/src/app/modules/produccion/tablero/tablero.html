@@ -1,0 +1,64 @@
+<div class="p-4 bg-white block sm:flex items-center justify-between border-b border-gray-200 lg:mt-1.5 dark:bg-gray-800 dark:border-gray-700">
+    <div class="w-full mb-1">
+        <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">Tablero de Planta</h1>
+        <p class="text-sm text-gray-500">Monitoreo en Tiempo Real</p>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 gap-4 px-4 pt-6 xl:grid-cols-4 xl:gap-4">
+    <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:border-gray-700 sm:p-6 dark:bg-gray-800">
+        <span class="text-2xl font-bold text-gray-900 dark:text-white">{{ kpis.en_cola }}</span>
+        <h3 class="text-base font-normal text-gray-500">Órdenes en Cola</h3>
+    </div>
+    <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:border-gray-700 sm:p-6 dark:bg-gray-800">
+        <span class="text-2xl font-bold text-green-600">{{ kpis.eficiencia }}%</span>
+        <h3 class="text-base font-normal text-gray-500">Eficiencia Global</h3>
+    </div>
+    <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:border-gray-700 sm:p-6 dark:bg-gray-800">
+        <span class="text-2xl font-bold text-gray-900 dark:text-white">{{ kpis.metros_hoy | number }} m</span>
+        <h3 class="text-base font-normal text-gray-500">Producción Hoy</h3>
+    </div>
+    <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:border-gray-700 sm:p-6 dark:bg-gray-800">
+        <span class="text-2xl font-bold text-red-600">{{ kpis.merma }}%</span>
+        <h3 class="text-base font-normal text-gray-500">Merma</h3>
+    </div>
+</div>
+
+<div class="p-4">
+    <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
+        <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+            <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                <tr>
+                    <th scope="col" class="px-6 py-3">Folio</th>
+                    <th scope="col" class="px-6 py-3">Cliente</th>
+                    <th scope="col" class="px-6 py-3">Producto Principal</th>
+                    <th scope="col" class="px-6 py-3">Entrega</th>
+                    <th scope="col" class="px-6 py-3">Progreso</th>
+                    <th scope="col" class="px-6 py-3">Estatus</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngIf="ordenesActivas.length === 0">
+                    <td colspan="6" class="p-4 text-center">No hay órdenes pendientes de producción.</td>
+                </tr>
+
+                <tr *ngFor="let orden of ordenesActivas" class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
+                    <td class="px-6 py-4 font-bold text-gray-900 dark:text-white">{{ orden.folio }}</td>
+                    <td class="px-6 py-4">{{ orden.cliente }}</td>
+                    <td class="px-6 py-4">{{ orden.producto }}</td>
+                    <td class="px-6 py-4">{{ orden.fecha_entrega }}</td>
+                    <td class="px-6 py-4">
+                        <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                            <div class="bg-blue-600 h-2.5 rounded-full" [style.width.%]="orden.avance"></div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span [class]="'text-xs font-medium px-2.5 py-0.5 rounded ' + getClaseEstatus(orden.estatus)">
+                            {{ orden.estatus }}
+                        </span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

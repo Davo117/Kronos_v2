@@ -1,13 +1,21 @@
 import { Routes } from '@angular/router';
 import { OrdenCompra } from './modules/logistica/orden-compra/orden-compra';
-
+import { ListaOrdenes } from './modules/logistica/lista-ordenes/lista-ordenes';
+import { Tablero } from './modules/produccion/tablero/tablero';
+import { Catalogos } from './modules/logistica/catalogos/catalogos';
 export const routes: Routes = [
-  // Ruta por defecto (Dashboard)
+
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
-  
-  // Nuestras rutas
+
+
   { path: 'ordenes/nueva', component: OrdenCompra },
+
+  { path: 'ordenes/editar/:id', component: OrdenCompra},
   
-  // Puedes agregar un componente Dashboard temporal si quieres
-  // { path: 'dashboard', component: DashboardComponent },
+  { path: 'ordenes/lista', component: ListaOrdenes}, 
+
+  { path: 'ordenes/catalogos', component: Catalogos },
+
+  { path: 'produccion/tablero', component: Tablero},
+
 ];

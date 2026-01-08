@@ -1,0 +1,84 @@
+<div class="p-4 bg-white block sm:flex items-center justify-between border-b border-gray-200 lg:mt-1.5 dark:bg-gray-800 dark:border-gray-700">
+    <div class="w-full mb-1">
+        <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-white">Gestión de Catálogos</h1>
+        <p class="text-sm text-gray-500">Logística / Altas Maestras</p>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-4 p-4">
+
+    <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:border-gray-700 sm:p-6 dark:bg-gray-800">
+        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">1. Nueva Ciudad</h3>
+        <div class="space-y-4">
+            <div>
+                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nombre Ciudad</label>
+                <input [(ngModel)]="ciudad.nombre" type="text" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Ej. Querétaro">
+            </div>
+            <div>
+                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Estado</label>
+                <input [(ngModel)]="ciudad.estado" type="text" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Ej. Querétaro">
+            </div>
+            <button (click)="guardarCiudad()" class="w-full text-white bg-purple-700 hover:bg-purple-800 focus:ring-4 focus:ring-purple-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-purple-600 dark:hover:bg-purple-700">
+                Guardar Ciudad
+            </button>
+        </div>
+    </div>
+
+    <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:border-gray-700 sm:p-6 dark:bg-gray-800">
+        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">2. Nuevo Cliente</h3>
+        <div class="space-y-3">
+            <input [(ngModel)]="cliente.nombre_fiscal" type="text" placeholder="Razón Social" class="w-full p-2 text-sm border rounded dark:bg-gray-700 dark:text-white">
+            <input [(ngModel)]="cliente.rfc" type="text" placeholder="RFC" class="w-full p-2 text-sm border rounded dark:bg-gray-700 dark:text-white">
+            <input [(ngModel)]="cliente.telefono" type="text" placeholder="Teléfono" class="w-full p-2 text-sm border rounded dark:bg-gray-700 dark:text-white">
+            
+            <hr class="dark:border-gray-600">
+            <p class="text-xs text-gray-500">Dirección Fiscal</p>
+            
+            <select [(ngModel)]="cliente.ciudad_id" class="w-full p-2 text-sm border rounded dark:bg-gray-700 dark:text-white">
+                <option value="" disabled selected>Seleccione Ciudad...</option>
+                <option *ngFor="let c of listaCiudades" [value]="c.id">{{ c.nombre }}, {{ c.estado }}</option>
+            </select>
+            <input [(ngModel)]="cliente.direccion" type="text" placeholder="Calle y Número" class="w-full p-2 text-sm border rounded dark:bg-gray-700 dark:text-white">
+            <div class="flex gap-2">
+                <input [(ngModel)]="cliente.colonia" type="text" placeholder="Colonia" class="w-full p-2 text-sm border rounded dark:bg-gray-700 dark:text-white">
+                <input [(ngModel)]="cliente.codigo_postal" type="text" placeholder="CP" class="w-24 p-2 text-sm border rounded dark:bg-gray-700 dark:text-white">
+            </div>
+
+            <button (click)="guardarCliente()" class="w-full mt-2 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700">
+                Registrar Cliente
+            </button>
+        </div>
+    </div>
+
+    <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm dark:border-gray-700 sm:p-6 dark:bg-gray-800">
+        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">3. Nueva Sucursal</h3>
+        <div class="space-y-3">
+            <label class="text-xs text-gray-500">Pertenece a:</label>
+            <select [(ngModel)]="sucursal.cliente_id" class="w-full p-2 text-sm border rounded dark:bg-gray-700 dark:text-white">
+                <option value="" disabled selected>Seleccione Cliente...</option>
+                <option *ngFor="let cl of listaClientes" [value]="cl.id">{{ cl.nombre }}</option>
+            </select>
+
+            <input [(ngModel)]="sucursal.nombre" type="text" placeholder="Nombre Sucursal (Ej. Planta 2)" class="w-full p-2 text-sm border rounded dark:bg-gray-700 dark:text-white">
+            <input [(ngModel)]="sucursal.transporte" type="text" placeholder="Transporte Preferido" class="w-full p-2 text-sm border rounded dark:bg-gray-700 dark:text-white">
+            <input [(ngModel)]="sucursal.telefono" type="text" placeholder="Teléfono Sucursal" class="w-full p-2 text-sm border rounded dark:bg-gray-700 dark:text-white">
+
+            <hr class="dark:border-gray-600">
+            <p class="text-xs text-gray-500">Dirección Entrega</p>
+
+            <select [(ngModel)]="sucursal.ciudad_id" class="w-full p-2 text-sm border rounded dark:bg-gray-700 dark:text-white">
+                <option value="" disabled selected>Seleccione Ciudad...</option>
+                <option *ngFor="let c of listaCiudades" [value]="c.id">{{ c.nombre }}, {{ c.estado }}</option>
+            </select>
+            <input [(ngModel)]="sucursal.direccion" type="text" placeholder="Calle y Número" class="w-full p-2 text-sm border rounded dark:bg-gray-700 dark:text-white">
+            <div class="flex gap-2">
+                <input [(ngModel)]="sucursal.colonia" type="text" placeholder="Colonia" class="w-full p-2 text-sm border rounded dark:bg-gray-700 dark:text-white">
+                <input [(ngModel)]="sucursal.codigo_postal" type="text" placeholder="CP" class="w-24 p-2 text-sm border rounded dark:bg-gray-700 dark:text-white">
+            </div>
+
+            <button (click)="guardarSucursal()" class="w-full mt-2 text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-green-600 dark:hover:bg-green-700">
+                Agregar Sucursal
+            </button>
+        </div>
+    </div>
+</div>
