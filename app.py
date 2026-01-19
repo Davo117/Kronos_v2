@@ -4,11 +4,10 @@ from flask_migrate import Migrate
 from dotenv import load_dotenv
 from flask_cors import CORS 
 
-
 from routes.logistica_routes import logistica_bp
 from routes.produccion_routes import produccion_bp 
 from routes.catalogos_routes import catalogos_bp
-
+from routes.producto_routes import producto_bp 
 from models.models import db, TipoMaterial, Material, Producto, ProductoReceta
 
 load_dotenv()
@@ -30,10 +29,12 @@ CORS(app)
 app.register_blueprint(logistica_bp)
 app.register_blueprint(produccion_bp)
 app.register_blueprint(catalogos_bp)
+app.register_blueprint(producto_bp)
+
 
 @app.route('/')
 def index():
-    return "¡Saturno v2.0 está en línea!"
+    return "Kronos v2.0 está en línea!"
 
 if __name__ == '__main__':
     app.run(debug=True)

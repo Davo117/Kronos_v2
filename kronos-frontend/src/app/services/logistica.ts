@@ -19,8 +19,8 @@ export class LogisticaService {
   }
 
   //2.Obtener Catálogo de Productos
-  getProductos(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/productos-catalogo`);
+  getProductos(clienteId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/productos-catalogo?cliente_id=${clienteId}`);
   }
 
   //3.Guardar el Pedido Completo
@@ -47,5 +47,5 @@ export class LogisticaService {
   actualizarPedido(id: number, pedido: any): Observable<any> {
     return this.http.put(`${this.apiUrl}/pedidos/${id}`, pedido);
   }
-  
+
 }

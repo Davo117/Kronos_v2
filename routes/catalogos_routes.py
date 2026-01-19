@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models.models import db, Ciudad, Cliente, Sucursal
+from models.models import db, Ciudad, Cliente, Sucursal, Producto
 
 catalogos_bp = Blueprint('catalogos', __name__)
 
@@ -96,3 +96,11 @@ def crear_sucursal():
         db.session.rollback()
         print("Error creando sucursal:", e)
         return jsonify({'error': str(e)}), 500
+    
+# -----------------------------------------------------------------------------
+# 4. PRODUCTOS 
+# -----------------------------------------------------------------------------
+
+# --- Se creo su propio archivo de rutas --- #
+
+

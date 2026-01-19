@@ -19,11 +19,7 @@ def get_clientes():
     return jsonify(resultado)
 
 # 2. Obtener lista de productos para el buscador
-@logistica_bp.route('/api/productos-catalogo', methods=['GET'])
-def get_productos_catalogo():
-    productos = Producto.query.filter_by(activo=True).all()
-    resultado = [{'id': p.id, 'nombre': p.nombre, 'codigo': p.codigo_interno} for p in productos]
-    return jsonify(resultado)
+# Se cambio a Catalogos route
 
 # 3. Guardar el pedido
 @logistica_bp.route('/api/pedidos', methods=['POST'])

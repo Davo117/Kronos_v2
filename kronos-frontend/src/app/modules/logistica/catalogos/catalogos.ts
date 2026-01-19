@@ -33,6 +33,7 @@ export class Catalogos implements OnInit {
     direccion: '', colonia: '', codigo_postal: '', ciudad_id: '' 
   };
 
+
   listaEstados: string[] = [
     'Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche', 
     'Chiapas', 'Chihuahua', 'Ciudad de México', 'Coahuila', 'Colima', 
@@ -88,4 +89,5 @@ export class Catalogos implements OnInit {
       error: (e) => alert('Error: ' + e.message)
     });
   }
+
 }

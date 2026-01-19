@@ -28,4 +28,8 @@ export class CatalogosService {
   crearSucursal(data: any): Observable<any> {
     return this.http.post(`${this.apiUrl}/sucursales-completo`, data);
   }
+  // --- PRODUCTOS
+  crearProducto(data: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/productos`, data);
+  }
 }

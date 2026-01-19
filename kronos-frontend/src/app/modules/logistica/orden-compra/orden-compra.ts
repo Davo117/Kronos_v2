@@ -83,19 +83,28 @@ export class OrdenCompra implements OnInit {
       this.catalogoClientes = data;
     });
 
-    this.logisticaService.getProductos().subscribe((data: any) => {
-      this.catalogoProductos = data;
-    });
   }
 
   onClienteChange() {
     this.catalogoSucursales = [];
     this.sucursalSeleccionada = '';
+    this.catalogoProductos = []; 
     
     const cliente = this.catalogoClientes.find((c: any) => c.id == this.clienteSeleccionado);
-    
     if (cliente && cliente.sucursales) {
       this.catalogoSucursales = cliente.sucursales;
+    }
+
+    // 3. CARGAR PRODUCTOS DE ESTE CLIENTE
+    if (this.clienteSeleccionado) {
+        this.logisticaService.getProductos(Number(this.clienteSeleccionado)).subscribe({
+            next: (data: any) => {
+                this.catalogoProductos = data;
+                // Opcional: Si no hay productos, avisar
+                if(data.length === 0) console.log("Este cliente no tiene productos registrados");
+            },
+            error: (err: any) => console.error(err)
+        });
     }
   }
 
