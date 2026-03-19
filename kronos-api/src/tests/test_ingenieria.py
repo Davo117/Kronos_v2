@@ -1,61 +1,32 @@
 """
 Test de Diagnóstico de Ingeniería - KronosSystem.
-Utiliza marcas de tiempo para garantizar la unicidad de los datos.
 """
 import pytest
-import time
 from fastapi.testclient import TestClient
 from main import app
 
 client = TestClient(app)
 
-def test_diagnostico_ingenieria():
-    # Generar sufijo único para evitar errores de integridad (UNIQUE)
-    uid = str(int(time.time()))[-4:]
-    
-    # 1. Registro de Empleado Único
-    print(f"\n[1/5] Registrando empleado E_{uid}...")
-    r_emp = client.post("/catalogos/empleados", json={
-        "nombre": f"DAVE_{uid}", 
-        "numero_empleado": f"E_{uid}"
-    })
-    assert r_emp.status_code == 200, f"Error en Empleado: {r_emp.json()}"
-    emp_id = r_emp.json()["id"]
+def test_crear_ficha_tecnica_completa():
+    """Crea la base para que Logística tenga un peso teórico que consultar."""
+    # 1. Crear Ficha Técnica
+    ft_payload = {"nombre_producto": "Caja Galletas XL", "codigo_producto": "GAL-001"}
+    response_ft = client.post("/ingenieria/fichas", json=ft_payload)
+    assert response_ft.status_code == 200
+    ft_id = response_ft.json()["id"]
 
-    # 2. Registro de Cliente Único
-    print(f"[2/5] Registrando cliente CLI_{uid}...")
-    r_cli = client.post("/catalogos/clientes", json={
-        "nombre": f"CLIENTE_{uid}", 
-        "direccion_matriz": "AV CENTRAL 1"
-    })
-    assert r_cli.status_code == 200
-    cli_id = r_cli.json()["id"]
+    # 2. Crear Configuración de Empaque (Peso 10kg, Tolerancia 5%)
+    config_payload = {"peso_teorico_kg": 10.0, "tolerancia_porcentaje": 5.0}
+    response_config = client.post("/ingenieria/config-empaque", json=config_payload)
+    assert response_config.status_code == 200
+    config_id = response_config.json()["id"]
 
-    # 3. Registro de Catálogos Técnicos
-    client.post("/catalogos/sustratos", json={
-        "descripcion": "BOPP", "codigo_interno": f"B_{uid}", 
-        "altura_material": 100, "gramaje": 40
-    })
-    r_cil = client.post("/ingenieria/cilindros", json={
-        "desarrollo_mm": 304.8, "repeticion": 1, "tipo_engrane": "CP"
-    })
-    r_cir = client.post("/ingenieria/cireles", json={
-        "espesor": 1.14, "lineaje": 133, "descripcion": "TEST"
-    })
-
-    # 4. Creación de Ficha Maestra
-    r_ft = client.post("/ingenieria/fichas", json={
-        "id_cliente": cli_id, 
-        "nombre_disenio": f"DISEÑO_{uid}"
-    })
-    assert r_ft.status_code == 200
-    ft_id = r_ft.json()["id"]
-
-    # 5. Creación de Versión
-    r_v = client.post("/ingenieria/versiones", json={
-        "id_ficha": ft_id, "pistas": 1, "avance_paso": 152.4,
-        "id_sustrato": 1, "id_juego_cilindro": r_cil.json()["id"], 
-        "id_cirel": r_cir.json()["id"], "id_creador_logistica": emp_id
-    })
-    assert r_v.status_code == 200
-    print(f"Ciclo de ingeniería completado con éxito.")
+    # 3. Crear Versión y aprobarla
+    version_payload = {
+        "id_ficha_tecnica": ft_id,
+        "version_numero": 1,
+        "id_config_empaque": config_id,
+        "estado": "aprobada"
+    }
+    response_ver = client.post("/ingenieria/versiones", json=version_payload)
+    assert response_ver.status_code == 200

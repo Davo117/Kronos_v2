@@ -1,8 +1,7 @@
 """
 Router de Logística - KronosSystem.
-Gestiona el pesaje de cajas y despacho.
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from src.config.db import get_db
 from src.modules.logistics import schemas
@@ -12,14 +11,10 @@ router = APIRouter(prefix="/logistica", tags=["Logística"])
 
 @router.post("/contenedores", response_model=schemas.EmpaqueResponse)
 def crear_caja(request: schemas.EmpaqueCreate, db: Session = Depends(get_db)):
-    try:
-        return logistics_service.crear_contenedor(db, request)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    # El ValueError interno de crear_contenedor será capturado por el handler global
+    return logistics_service.crear_contenedor(db, request)
 
 @router.patch("/contenedores/{id}/pesar", response_model=schemas.EmpaqueResponse)
 def pesar_caja(id: int, request: schemas.EmpaqueUpdatePeso, db: Session = Depends(get_db)):
-    try:
-        return logistics_service.registrar_peso_y_evaluar(db, id, float(request.peso_bascula))
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    # Se pasa el Decimal directamente desde el esquema validado
+    return logistics_service.registrar_peso_y_evaluar(db, id, request.peso_bascula)

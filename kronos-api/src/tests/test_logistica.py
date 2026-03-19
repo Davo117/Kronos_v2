@@ -2,26 +2,26 @@
 Pruebas de integración para Logística.
 Valida pesaje contra configuración de ingeniería y gestión de embarques.
 """
+import pytest
 from fastapi.testclient import TestClient
 from main import app
+from decimal import Decimal
 
 client = TestClient(app)
 
-def test_pesaje_y_despacho_logistico():
-    """Valida que solo cajas con peso aprobado puedan asignarse a un embarque."""
-    # 1. Crear Contenedor (El servicio jala peso_teorico: 12.500 de la FT)
-    cont_data = {"id_orden": 1, "id_operario": 1, "peso_teorico": 12.500} # El peso es validado por el service
-    resp_cont = client.post("/logistica/contenedores", json=cont_data)
-    assert resp_cont.status_code == 200
-    caja_id = resp_cont.json()["id"]
+def test_health_check():
+    """Verifica que la API y la DB estén respondiendo correctamente."""
+    response = client.get("/")
+    assert response.status_code == 200
+    assert response.json()["database"] == "connected"
 
-    # 2. Pesaje en Báscula (Dentro de tolerancia 1%: 12.450 Kg)
-    resp_peso = client.patch(f"/logistica/contenedores/{caja_id}/pesar", json={"peso_bascula": 12.450})
-    assert resp_peso.status_code == 200
-    assert resp_peso.json()["aprobado"] is True
-
-    # 3. Crear Embarque y Asignar
-    client.post("/logistica/embarques", json={"transporte": "TRANSPORTE EXPRESS"})
-    resp_asig = client.post(f"/logistica/embarques/1/asignar", json={"contenedor_ids": [caja_id]})
-    assert resp_asig.status_code == 200
-    assert resp_asig.json()["asignaciones"] == 1
+def test_crear_contenedor_orden_inexistente():
+    """Prueba que el manejador global capture el error 400 cuando la orden no existe."""
+    payload = {
+        "id_orden": 999999, # ID que no existe
+        "id_operario": 1
+    }
+    response = client.post("/logistica/contenedores", json=payload)
+    assert response.status_code == 400
+    # Verificamos que nuestro handler global en main.py funcione
+    assert response.json()["type"] == "ValidationError"

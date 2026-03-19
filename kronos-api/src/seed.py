@@ -1,93 +1,46 @@
 """
-Script de población de datos maestros (Seeding).
-Sincronizado con nombres de tabla oficiales y resolución de dependencias circulares.
+Script de carga de datos iniciales (Seed).
 """
-from sqlalchemy.orm import Session
-from src.config.db import SessionLocal
+from src.config.db import SessionLocal, engine, Base
+from src.modules.common.models import Cliente, Sucursal
+from src.modules.engineering.models import FichaTecnica, FTVersion, ConfigEmpaque
+from src.modules.production.models import OrdenCompra
 from decimal import Decimal
 
-# IMPORTANTE: Importar todos los modelos primero para registrarlos en Base.registry
-from src.modules.common import models as c_models
-from src.modules.production import models as p_models
-from src.modules.engineering import models as e_models
-from src.modules.logistics import models as l_models
-
 def run_seed():
-    """Ejecuta la carga de catálogos con validación de existencia previa."""
     db = SessionLocal()
     try:
-        print("--> Iniciando carga de catálogos maestros con resolución de nombres...")
-
-        # 1. Catálogos Base
-        proceso = db.query(c_models.ProcesoMaestro).filter_by(sigla="IM").first()
-        if not proceso:
-            proceso = c_models.ProcesoMaestro(nombre_proceso="IMPRESION", sigla="IM")
-            db.add(proceso)
-            db.flush()
-
-        maquina = db.query(c_models.Maquina).filter_by(codigo_maquina="IM-01").first()
-        if not maquina:
-            maquina = c_models.Maquina(codigo_maquina="IM-01", descripcion="PRENSA 1", id_proceso=proceso.id)
-            db.add(maquina)
-
-        cliente = db.query(c_models.Cliente).filter_by(nombre="PEPSI CO.").first()
-        if not cliente:
-            cliente = c_models.Cliente(nombre="PEPSI CO.")
-            db.add(cliente)
-            db.flush()
-
-        sucursal = db.query(c_models.Sucursal).filter_by(id_cliente=cliente.id, nombre_sucursal="PLANTA NORTE").first()
-        if not sucursal:
-            sucursal = c_models.Sucursal(id_cliente=cliente.id, nombre_sucursal="PLANTA NORTE", direccion_completa="KM 15")
-            db.add(sucursal)
-
-        sustrato = db.query(c_models.Sustrato).filter_by(codigo_interno="BOPP-01").first()
-        if not sustrato:
-            sustrato = c_models.Sustrato(descripcion="BOPP", codigo_interno="BOPP-01", altura_material=Decimal("250.00"), gramaje=Decimal("60.00"))
-            db.add(sustrato)
-
-        empleado = db.query(c_models.Empleado).filter_by(numero_empleado="OP-001").first()
-        if not empleado:
-            empleado = c_models.Empleado(nombre="JUAN PEREZ", numero_empleado="OP-001")
-            db.add(empleado)
-
-        # 2. Ingeniería
-        cilindro = db.query(e_models.JuegoCilindro).filter_by(desarrollo_mm=Decimal("320.00")).first()
-        if not cilindro:
-            cilindro = e_models.JuegoCilindro(desarrollo_mm=Decimal("320.00"), repeticion=4, tipo_engrane="CP")
-            db.add(cilindro)
-        
-        cirel = db.query(e_models.Cirel).filter_by(lineaje=133).first()
-        if not cirel:
-            cirel = e_models.Cirel(espesor=Decimal("1.143"), lineaje=133, descripcion="HD")
-            db.add(cirel)
+        # 1. Crear Cliente y Sucursal
+        cliente = Cliente(nombre="Cliente de Prueba")
+        db.add(cliente)
         db.flush()
-
-        ficha = db.query(e_models.FichaTecnica).filter_by(nombre_disenio="PEPSI 500ML").first()
-        if not ficha:
-            ficha = e_models.FichaTecnica(id_cliente=cliente.id, nombre_disenio="PEPSI 500ML")
-            db.add(ficha)
-            db.flush()
-
-        version = db.query(e_models.FTVersion).filter_by(id_ficha=ficha.id, numero_version=1).first()
-        if not version:
-            version = e_models.FTVersion(
-                id_ficha=ficha.id, numero_version=1, pistas=3, avance_paso=Decimal("150.50"),
-                id_sustrato=sustrato.id, id_juego_cilindro=cilindro.id, id_cirel=cirel.id
-            )
-            db.add(version)
-            db.flush()
-
-        empaque = db.query(e_models.FTEmpaqueOpcion).filter_by(id_version=version.id, tipo_empaque="ROLLO").first()
-        if not empaque:
-            empaque = e_models.FTEmpaqueOpcion(id_version=version.id, tipo_empaque="ROLLO", piezas_por_unidad=5000)
-            db.add(empaque)
-
+        
+        sucursal = Sucursal(id_cliente=cliente.id, nombre_sucursal="Planta 1", direccion_completa="Calle Falsa 123")
+        db.add(sucursal)
+        
+        # 2. Crear Estructura de Ingeniería
+        ft = FichaTecnica(nombre_producto="Producto Test", codigo_producto="TEST-001")
+        db.add(ft)
+        db.flush()
+        
+        # Configuración de empaque (Peso 10kg, 5% tolerancia)
+        config = ConfigEmpaque(peso_teorico_kg=Decimal("10.00"), tolerancia_porcentaje=Decimal("5.00"))
+        db.add(config)
+        db.flush()
+        
+        version = FTVersion(id_ficha_tecnica=ft.id, version_numero=1, id_config_empaque=config.id, estado="aprobada")
+        db.add(version)
+        db.flush()
+        
+        # 3. Crear Orden de Compra
+        orden = OrdenCompra(id_sucursal=sucursal.id, id_version_ft=version.id, numero_orden="OC-100", cantidad_solicitada=100)
+        db.add(orden)
+        
         db.commit()
-        print("--> Sincronización exitosa.")
+        print("Seed completado: Orden ID 1 creada con éxito.")
     except Exception as e:
         db.rollback()
-        print(f"!!! Error en seed: {e}")
+        print(f"Error en seed: {e}")
     finally:
         db.close()
 
